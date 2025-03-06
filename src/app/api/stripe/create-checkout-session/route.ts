@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { currentUser } from '@clerk/nextjs';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import Stripe from 'stripe';
 import dbConnect from '@/lib/dbConnect';
 import User from '@/models/User';
@@ -8,12 +8,14 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2023-10-16',
 });
 
-// Define price IDs and corresponding credits - prctbl_1QzLmxJrIw0vuTAiYguWSJwi
-// These will need to be replaced with your actual Stripe price IDs
+// Define price IDs and corresponding credits for the pricing table: prctbl_1QzLmxJrIw0vuTAiYguWSJwi
+// These need to match your actual Stripe price IDs
 const PRICE_CREDITS_MAP: Record<string, number> = {
-  'price_1ROnqVJrIw0vuTAi4vYldGK8': 5000,      // Free tier - 5,000 credits
-  'price_1ROnqVJrIw0vuTAiGgaxm2vU': 50000,     // Plus tier - 50,000 credits ($4.99)
-  'price_1ROnqVJrIw0vuTAi2JnvYd8a': 150000,    // Pro tier - 150,000 credits ($9.99)
+  // Update these with your actual price IDs from Stripe Dashboard
+  'price_starter': 5000,      // Free tier - 5,000 credits
+  'price_plus': 50000,        // Plus tier - 50,000 credits ($4.99)
+  'price_pro': 150000,        // Pro tier - 150,000 credits ($9.99)
+  'price_1QzkchJrIw0vuTAiUnZCjpwM': 10000,  // Test product - 10,000 credits
 };
 
 export async function POST(req: NextRequest) {
@@ -31,6 +33,13 @@ export async function POST(req: NextRequest) {
     
     if (!priceId) {
       return NextResponse.json({ error: 'Price ID is required' }, { status: 400 });
+    }
+
+    // Verify price ID exists in our pricing map
+    if (!PRICE_CREDITS_MAP[priceId]) {
+      return NextResponse.json({ 
+        error: 'Invalid price ID. Please check your Stripe configuration.' 
+      }, { status: 400 });
     }
 
     // Connect to the database
