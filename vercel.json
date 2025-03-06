@@ -4,11 +4,11 @@
   "outputDirectory": ".next",
   "cleanUrls": true,
   "env": {
-    "MONGODB_URI": "@mongodb_uri",
-    "OPENAI_API_KEY": "@openai_api_key",
-    "ANTHROPIC_API_KEY": "@anthropic_api_key",
-    "STRIPE_SECRET_KEY": "@stripe_secret_key",
-    "STRIPE_WEBHOOK_SECRET": "@stripe_webhook_secret",
+    "MONGODB_URI": "${MONGODB_URI}",
+    "OPENAI_API_KEY": "${OPENAI_API_KEY}",
+    "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}",
+    "STRIPE_SECRET_KEY": "${STRIPE_SECRET_KEY}",
+    "STRIPE_WEBHOOK_SECRET": "${STRIPE_WEBHOOK_SECRET}",
     "NEXT_PUBLIC_APP_URL": "https://www.chart-able.com"
   }
 } 
