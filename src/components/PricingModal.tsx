@@ -38,8 +38,8 @@ const pricingTiers = [
     id: 'test',
     name: 'Test Plan',
     credits: 10000,
-    price: 0.99,
-    priceId: 'price_1QzkchJrIw0vuTAiUnZCjpwM',
+    price: 0.50,
+    priceId: 'price_1Qzo1PJrIw0vuTAiNebDjhul',
     features: ['Test checkout functionality', 'Quick credit boost', 'For testing only'],
     recommended: false,
     isTestProduct: true

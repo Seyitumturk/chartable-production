@@ -15,7 +15,7 @@ const PRICE_CREDITS_MAP: Record<string, number> = {
   'price_starter': 5000,      // Free tier - 5,000 credits
   'price_plus': 50000,        // Plus tier - 50,000 credits ($4.99)
   'price_pro': 150000,        // Pro tier - 150,000 credits ($9.99)
-  'price_1QzkchJrIw0vuTAiUnZCjpwM': 10000,  // Test product - 10,000 credits
+  'price_1Qzo1PJrIw0vuTAiNebDjhul': 10000,  // Test product - 10,000 credits ($0.50 CAD)
 };
 
 export async function POST(req: NextRequest) {
