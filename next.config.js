@@ -11,7 +11,7 @@ const nextConfig = {
   // Moved key: specify external packages that must be bundled on the server
   serverExternalPackages: ['playwright-core'],
   experimental: {
-    typedRoutes: false, // Enable typed routes (keep this experimental flag)
+    typedRoutes: false, // Enable dtyped routes (keep this experimental flag)
   },
   // Environment variables loading
   env: {
