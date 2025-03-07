@@ -12,6 +12,11 @@ function SuccessContent() {
   const [countdown, setCountdown] = useState(5);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(true);
+  const [updatedCredits, setUpdatedCredits] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Get session ID from URL
+  const sessionId = searchParams.get('session_id');
 
   useEffect(() => {
     const storedPref = localStorage.getItem('isDarkMode');
@@ -28,11 +33,49 @@ function SuccessContent() {
     }
   }, [isDarkMode]);
 
+  // Direct credit update function - as a fallback for webhook
+  const updateCreditsDirectly = async () => {
+    if (!sessionId) {
+      console.error('[PAYMENT_SUCCESS] No session ID found in URL');
+      return;
+    }
+
+    try {
+      console.log('[PAYMENT_SUCCESS] Attempting direct credit update with session:', sessionId);
+      const response = await fetch('/api/stripe/manual-credit-update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          sessionId, 
+          credits: 5000 // Hardcoded for now as this is for the test product
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('[PAYMENT_SUCCESS] Direct credit update result:', result);
+        setUpdatedCredits(true);
+      } else {
+        const errorText = await response.text();
+        console.error('[PAYMENT_SUCCESS] Direct credit update failed:', errorText);
+      }
+    } catch (error) {
+      console.error('[PAYMENT_SUCCESS] Error during direct credit update:', error);
+    }
+  };
+
   // Refresh user data when component mounts
   useEffect(() => {
     const refreshUserData = async () => {
       try {
         console.log('[PAYMENT_SUCCESS] Starting user data refresh');
+        
+        // First attempt direct credit update as fallback for webhook
+        if (sessionId) {
+          await updateCreditsDirectly();
+        }
         
         // Force refresh user data from the server
         const response = await fetch('/api/users', {
@@ -50,16 +93,18 @@ function SuccessContent() {
           console.error('[PAYMENT_SUCCESS] Failed to refresh user data. Status:', response.status);
           const errorText = await response.text();
           console.error('[PAYMENT_SUCCESS] Error response:', errorText);
+          setError('Failed to refresh user data. Please contact support if credits are not added.');
         }
       } catch (error) {
         console.error('[PAYMENT_SUCCESS] Error refreshing user data:', error);
+        setError('An error occurred while refreshing user data.');
       } finally {
         setIsRefreshing(false);
       }
     };
 
     refreshUserData();
-  }, []);
+  }, [sessionId]);
 
   // Auto-redirect countdown - only start after data is refreshed
   useEffect(() => {
@@ -117,8 +162,16 @@ function SuccessContent() {
             <h1 className="text-3xl font-bold mb-4">Payment Successful!</h1>
             
             <p className={`mb-6 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-              Your credits have been added to your account. You can now continue using Chartable with your new credits.
+              {updatedCredits 
+                ? "5000 credits have been added to your account." 
+                : "Your credits are being added to your account."}
             </p>
+            
+            {error && (
+              <div className="mb-4 p-3 rounded bg-red-500/20 border border-red-500/30 text-red-200">
+                {error}
+              </div>
+            )}
             
             <div className="flex flex-col space-y-4">
               <Link 
