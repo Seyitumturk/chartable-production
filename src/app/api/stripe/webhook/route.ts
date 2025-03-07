@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { headers } from 'next/headers';
 import mongoose from 'mongoose';
-import connectDB from '@/lib/mongodb'; // Use direct mongodb connection
+import dbConnect from '@/lib/dbConnect'; // Changed from connectDB to dbConnect
 import User from '@/models/User';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
@@ -63,9 +63,9 @@ export async function POST(req: NextRequest) {
 async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
   console.log('[WEBHOOK] Beginning handleSuccessfulPayment process');
   
-  // Connect to database - use direct connection
+  // Connect to database - use dbConnect instead of connectDB
   try {
-    await connectDB();
+    await dbConnect();
     console.log('[WEBHOOK] Database connected successfully');
   } catch (dbError) {
     console.error('[WEBHOOK] Database connection error:', dbError);

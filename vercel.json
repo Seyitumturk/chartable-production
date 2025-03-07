@@ -9,6 +9,7 @@
     "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY}",
     "STRIPE_SECRET_KEY": "${STRIPE_SECRET_KEY}",
     "STRIPE_WEBHOOK_SECRET": "${STRIPE_WEBHOOK_SECRET}",
-    "NEXT_PUBLIC_APP_URL": "https://www.chart-able.com"
+    "NEXT_PUBLIC_APP_URL": "https://www.chart-able.com",
+    "NODE_ENV": "production"
   }
 } 
