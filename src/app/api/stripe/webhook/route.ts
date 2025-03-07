@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { headers } from 'next/headers';
 import mongoose from 'mongoose';
-import dbConnect from '@/lib/dbConnect'; // Changed from connectDB to dbConnect
+import connectDB from '@/lib/mongodb'; // Use direct mongodb connection
 import User from '@/models/User';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
@@ -62,11 +62,18 @@ export async function POST(req: NextRequest) {
 
 async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
   console.log('[WEBHOOK] Beginning handleSuccessfulPayment process');
+  console.log('[WEBHOOK] Full session data:', JSON.stringify(session, null, 2));
   
-  // Connect to database - use dbConnect instead of connectDB
+  // Connect to database - use direct connection
   try {
-    await dbConnect();
+    await connectDB();
     console.log('[WEBHOOK] Database connected successfully');
+
+    // Log environment variables
+    console.log('[WEBHOOK] Environment check:');
+    console.log(`  NODE_ENV: ${process.env.NODE_ENV}`);
+    console.log(`  MONGODB_URI: ${process.env.MONGODB_URI?.substring(0, 20)}...`);
+    console.log(`  APP URL: ${process.env.NEXT_PUBLIC_APP_URL}`);
   } catch (dbError) {
     console.error('[WEBHOOK] Database connection error:', dbError);
     throw dbError;
@@ -101,6 +108,16 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
       user = await User.findById(userId);
       if (user) {
         console.log(`[WEBHOOK] Found user by MongoDB ID: ${user._id}`);
+        console.log(`[WEBHOOK] User details: ${JSON.stringify({
+          _id: user._id.toString(),
+          username: user.username,
+          email: user.email,
+          clerkId: user.clerkId,
+          stripeCustomerId: user.stripeCustomerId,
+          wordCountBalance: user.wordCountBalance
+        })}`);
+      } else {
+        console.log(`[WEBHOOK] No user found by MongoDB ID: ${userId}`);
       }
     } catch (error) {
       console.error(`[WEBHOOK] Error finding user by MongoDB ID:`, error);
@@ -114,6 +131,16 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
       user = await User.findOne({ clerkId });
       if (user) {
         console.log(`[WEBHOOK] Found user by clerkId: ${user._id}`);
+        console.log(`[WEBHOOK] User details: ${JSON.stringify({
+          _id: user._id.toString(),
+          username: user.username,
+          email: user.email,
+          clerkId: user.clerkId,
+          stripeCustomerId: user.stripeCustomerId,
+          wordCountBalance: user.wordCountBalance
+        })}`);
+      } else {
+        console.log(`[WEBHOOK] No user found by clerkId: ${clerkId}`);
       }
     } catch (error) {
       console.error(`[WEBHOOK] Error finding user by clerkId:`, error);
@@ -127,6 +154,16 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
       user = await User.findOne({ stripeCustomerId: session.customer });
       if (user) {
         console.log(`[WEBHOOK] Found user by Stripe customer ID: ${user._id}`);
+        console.log(`[WEBHOOK] User details: ${JSON.stringify({
+          _id: user._id.toString(),
+          username: user.username,
+          email: user.email,
+          clerkId: user.clerkId,
+          stripeCustomerId: user.stripeCustomerId,
+          wordCountBalance: user.wordCountBalance
+        })}`);
+      } else {
+        console.log(`[WEBHOOK] No user found by Stripe customer ID: ${session.customer}`);
       }
     } catch (error) {
       console.error(`[WEBHOOK] Error finding user by Stripe customer ID:`, error);
@@ -143,9 +180,29 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
   const oldBalance = user.wordCountBalance;
   user.wordCountBalance += purchasedCredits;
   
+  console.log(`[WEBHOOK] Updating credits: ${oldBalance} + ${purchasedCredits} = ${user.wordCountBalance}`);
+  
   try {
-    await user.save();
+    // Log the user schema before saving
+    console.log(`[WEBHOOK] User schema before save:`, JSON.stringify(user.toObject(), null, 2));
+    
+    const result = await user.save();
+    
+    console.log(`[WEBHOOK] Save result:`, JSON.stringify(result, null, 2));
     console.log(`[WEBHOOK] Credits updated for user ${user._id}: ${oldBalance} + ${purchasedCredits} = ${user.wordCountBalance}`);
+    
+    // Double-check the update was applied by fetching the user again
+    const updatedUser = await User.findById(user._id);
+    console.log(`[WEBHOOK] User after update: ${JSON.stringify({
+      _id: updatedUser._id.toString(),
+      username: updatedUser.username,
+      email: updatedUser.email,
+      wordCountBalance: updatedUser.wordCountBalance
+    })}`);
+    
+    if (updatedUser.wordCountBalance !== user.wordCountBalance) {
+      console.error(`[WEBHOOK] WARNING: Updated balance mismatch! Expected ${user.wordCountBalance} but got ${updatedUser.wordCountBalance}`);
+    }
   } catch (saveError) {
     console.error('[WEBHOOK] Error saving user with updated credits:', saveError);
     throw saveError;

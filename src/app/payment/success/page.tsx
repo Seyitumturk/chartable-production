@@ -32,6 +32,8 @@ function SuccessContent() {
   useEffect(() => {
     const refreshUserData = async () => {
       try {
+        console.log('[PAYMENT_SUCCESS] Starting user data refresh');
+        
         // Force refresh user data from the server
         const response = await fetch('/api/users', {
           method: 'GET',
@@ -41,12 +43,16 @@ function SuccessContent() {
         });
         
         if (response.ok) {
-          console.log('User data refreshed successfully');
+          const userData = await response.json();
+          console.log('[PAYMENT_SUCCESS] User data refreshed successfully:', JSON.stringify(userData));
+          console.log('[PAYMENT_SUCCESS] Current wordCountBalance:', userData.user?.wordCountBalance);
         } else {
-          console.error('Failed to refresh user data');
+          console.error('[PAYMENT_SUCCESS] Failed to refresh user data. Status:', response.status);
+          const errorText = await response.text();
+          console.error('[PAYMENT_SUCCESS] Error response:', errorText);
         }
       } catch (error) {
-        console.error('Error refreshing user data:', error);
+        console.error('[PAYMENT_SUCCESS] Error refreshing user data:', error);
       } finally {
         setIsRefreshing(false);
       }
