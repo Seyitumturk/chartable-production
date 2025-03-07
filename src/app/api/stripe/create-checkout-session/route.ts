@@ -15,7 +15,10 @@ const PRICE_CREDITS_MAP: Record<string, number> = {
   'price_starter': 5000,      // Free tier - 5,000 credits
   'price_plus': 50000,        // Plus tier - 50,000 credits ($4.99)
   'price_pro': 150000,        // Pro tier - 150,000 credits ($9.99)
-  'price_1Qzo1PJrIw0vuTAiNebDjhul': 10000,  // Test product - 10,000 credits ($0.50 CAD)
+  'price_1Qzo1PJrIw0vuTAiNebDjhul': 5000,  // Test product - Updated to 5,000 credits ($0.50 CAD)
+  
+  // Add any live price IDs that are being used
+  // Example: 'price_1QzLmxJrIw0vuTAiYguWSJwi': 5000, 
 };
 
 export async function POST(req: NextRequest) {
@@ -37,6 +40,7 @@ export async function POST(req: NextRequest) {
 
     // Verify price ID exists in our pricing map
     if (!PRICE_CREDITS_MAP[priceId]) {
+      console.error(`Invalid price ID requested: ${priceId}. Available price IDs: ${Object.keys(PRICE_CREDITS_MAP).join(', ')}`);
       return NextResponse.json({ 
         error: 'Invalid price ID. Please check your Stripe configuration.' 
       }, { status: 400 });

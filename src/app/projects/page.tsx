@@ -394,7 +394,7 @@ export default function ProjectsPage() {
             transition={{ duration: 0.5 }}
             className={`text-4xl md:text-5xl font-bold mb-6 ${isDarkMode ? "text-white" : "text-gray-900"}`}
           >
-            Your Diagramss
+            Your Diagrams
           </motion.h1>
           
           <motion.div

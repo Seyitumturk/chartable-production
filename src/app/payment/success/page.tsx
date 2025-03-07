@@ -11,6 +11,7 @@ function SuccessContent() {
   const router = useRouter();
   const [countdown, setCountdown] = useState(5);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(true);
 
   useEffect(() => {
     const storedPref = localStorage.getItem('isDarkMode');
@@ -27,13 +28,43 @@ function SuccessContent() {
     }
   }, [isDarkMode]);
 
-  // Auto-redirect countdown
+  // Refresh user data when component mounts
   useEffect(() => {
+    const refreshUserData = async () => {
+      try {
+        // Force refresh user data from the server
+        const response = await fetch('/api/users', {
+          method: 'GET',
+          headers: {
+            'Cache-Control': 'no-cache',
+          },
+        });
+        
+        if (response.ok) {
+          console.log('User data refreshed successfully');
+        } else {
+          console.error('Failed to refresh user data');
+        }
+      } catch (error) {
+        console.error('Error refreshing user data:', error);
+      } finally {
+        setIsRefreshing(false);
+      }
+    };
+
+    refreshUserData();
+  }, []);
+
+  // Auto-redirect countdown - only start after data is refreshed
+  useEffect(() => {
+    if (isRefreshing) return;
+
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          router.push('/projects');
+          // Force a hard refresh of the /projects page to ensure latest data
+          window.location.href = '/projects';
           return 0;
         }
         return prev - 1;
@@ -41,7 +72,7 @@ function SuccessContent() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [router]);
+  }, [isRefreshing]);
 
   return (
     <main className={`min-h-screen flex flex-col ${
@@ -87,12 +118,16 @@ function SuccessContent() {
               <Link 
                 href="/projects" 
                 className="w-full py-3 px-4 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors shadow-lg shadow-primary/20 flex items-center justify-center"
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.location.href = '/projects';
+                }}
               >
                 Return to Projects
               </Link>
               
               <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                Redirecting in {countdown} seconds...
+                {isRefreshing ? 'Updating your credits...' : `Redirecting in ${countdown} seconds...`}
               </p>
             </div>
           </div>
