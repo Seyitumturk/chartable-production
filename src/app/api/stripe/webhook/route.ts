@@ -225,11 +225,26 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
   
   console.log(`[WEBHOOK] Updating credits: ${oldBalance} + ${purchasedCredits} = ${user.wordCountBalance}`);
   
+  // If this is the Starter plan purchase, mark it as purchased in the user record
+  if (session.metadata?.productName === 'price_1QzLeZJrIw0vuTAi0GfokpSI' || 
+      (session.line_items?.data?.[0]?.price?.id === 'price_1QzLeZJrIw0vuTAi0GfokpSI')) {
+    console.log(`[WEBHOOK] Marking Starter plan as purchased for user ${user._id}`);
+    user.hasStarterPlan = true;
+  }
+  
   try {
     // IMPORTANT FIX: Use updateOne directly as a fallback approach to ensure update goes through
+    const updateObj: any = { $inc: { wordCountBalance: purchasedCredits } };
+    
+    // Include hasStarterPlan flag in the update if it's the Starter plan
+    if (session.metadata?.productName === 'price_1QzLeZJrIw0vuTAi0GfokpSI' || 
+        (session.line_items?.data?.[0]?.price?.id === 'price_1QzLeZJrIw0vuTAi0GfokpSI')) {
+      updateObj.$set = { hasStarterPlan: true };
+    }
+    
     const updateResult = await User.updateOne(
       { _id: user._id },
-      { $inc: { wordCountBalance: purchasedCredits } }
+      updateObj
     );
     
     console.log(`[WEBHOOK] Direct update result:`, JSON.stringify(updateResult));

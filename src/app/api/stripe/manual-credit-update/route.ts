@@ -112,6 +112,18 @@ export async function POST(req: NextRequest) {
     // Update the user's credit balance
     user.wordCountBalance += creditsToAdd;
     
+    // Check if this is the Starter plan purchase
+    const starterPlanPriceId = 'price_1QzLeZJrIw0vuTAi0GfokpSI';
+    const isStarterPlanPurchase = 
+      (session.metadata?.productName === starterPlanPriceId) || 
+      (session.line_items?.data?.[0]?.price?.id === starterPlanPriceId);
+    
+    // If this is the Starter plan, mark it as purchased
+    if (isStarterPlanPurchase) {
+      console.log(`[MANUAL_CREDIT] Marking Starter plan as purchased for user ${user._id}`);
+      user.hasStarterPlan = true;
+    }
+    
     // Add detailed console logs to help debug
     console.log(`[MANUAL_CREDIT] Updating balance: ${oldBalance} + ${creditsToAdd} = ${user.wordCountBalance}`);
     console.log(`[MANUAL_CREDIT] User schema before save:`, JSON.stringify(user.toObject(), null, 2));

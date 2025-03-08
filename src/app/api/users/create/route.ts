@@ -32,6 +32,7 @@ export async function POST() {
       lastName: clerkUser.lastName || '',
       email: clerkUser.emailAddresses[0]?.emailAddress || '',
       wordCountBalance: 5000, // Default word count balance
+      hasStarterPlan: false, // Initialize as not having purchased the Starter plan yet
     });
 
     return NextResponse.json({ user: newUser });

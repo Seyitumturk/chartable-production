@@ -9,6 +9,7 @@ export interface IUser extends Document {
   email: string;
   stripeCustomerId?: string;
   wordCountBalance: number;
+  hasStarterPlan: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -50,6 +51,10 @@ const userSchema = new Schema<IUser>({
   wordCountBalance: {
     type: Number,
     default: 5000,
+  },
+  hasStarterPlan: {
+    type: Boolean,
+    default: false,
   },
 }, {
   timestamps: true,

@@ -30,6 +30,7 @@ interface Project {
 interface User {
   _id: string;
   wordCountBalance: number;
+  hasStarterPlan?: boolean;
 }
 
 const EditableTitle = ({ 
@@ -705,6 +706,7 @@ export default function ProjectsPage() {
             onClose={() => setIsPricingModalOpen(false)}
             currentCredits={user.wordCountBalance}
             isDarkMode={isDarkMode}
+            hasPurchasedStarter={user.hasStarterPlan || false}
           />
         )}
       </div>

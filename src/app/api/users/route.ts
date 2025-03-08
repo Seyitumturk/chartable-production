@@ -45,6 +45,7 @@ export async function GET(_req: Request) {
         lastName: user.lastName,
         email: user.email,
         wordCountBalance: user.wordCountBalance,
+        hasStarterPlan: user.hasStarterPlan || false,
         updatedAt: user.updatedAt
       }
     });

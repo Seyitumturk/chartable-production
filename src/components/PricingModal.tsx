@@ -33,16 +33,6 @@ const pricingTiers = [
     priceId: 'price_1QzLdXJrIw0vuTAiJ2Nw6P5w',
     features: ['All Plus features', 'Team collaboration', 'Custom themes', 'API access'],
     recommended: false
-  },
-  {
-    id: 'test',
-    name: 'Test Plan',
-    credits: 5000,
-    price: 0.50,
-    priceId: 'price_1Qzo1PJrIw0vuTAiNebDjhul',
-    features: ['Test checkout functionality', 'Quick credit boost', 'For testing only'],
-    recommended: false,
-    isTestProduct: true
   }
 ];
 
@@ -51,19 +41,32 @@ interface PricingModalProps {
   onClose: () => void;
   currentCredits: number;
   isDarkMode: boolean;
+  hasPurchasedStarter?: boolean;
 }
 
-export default function PricingModal({ isOpen, onClose, currentCredits, isDarkMode }: PricingModalProps) {
+export default function PricingModal({ isOpen, onClose, currentCredits, isDarkMode, hasPurchasedStarter = false }: PricingModalProps) {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState<string | null>(null);
+  const [purchasingTier, setPurchasingTier] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handlePurchase = async (priceId: string) => {
     try {
-      setIsLoading(priceId);
+      // Find the tier that matches this price
+      const tier = pricingTiers.find(t => t.priceId === priceId);
+      if (!tier) return;
+
+      // Don't allow purchasing the Starter plan if already purchased
+      if (tier.id === 'free' && hasPurchasedStarter) {
+        return;
+      }
+      
+      // Reset any previous errors
       setError(null);
       
-      // Call your API to create a checkout session
+      // Set loading state
+      setPurchasingTier(tier.id);
+      
+      // Initialize Stripe checkout
       const response = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -73,24 +76,27 @@ export default function PricingModal({ isOpen, onClose, currentCredits, isDarkMo
       });
 
       const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create checkout session');
-      }
 
-      // Redirect to Stripe Checkout
-      const stripe = await stripePromise;
-      const { error } = await stripe!.redirectToCheckout({ sessionId: data.sessionId });
+      if (response.ok) {
+        // If successful, redirect to Stripe Checkout
+        const stripe = await stripePromise;
+        if (stripe) {
+          const { error } = await stripe.redirectToCheckout({
+            sessionId: data.sessionId,
+          });
 
-      if (error) {
-        console.error('Error redirecting to checkout:', error);
-        setError('Error redirecting to checkout. Please try again.');
+          if (error) {
+            setError(`Payment Error: ${error.message}`);
+          }
+        }
+      } else {
+        setError(`Error: ${data.error || 'Failed to create checkout session'}`);
       }
-    } catch (error) {
-      console.error('Failed to create checkout session:', error);
-      setError(error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.');
+    } catch (err: any) {
+      console.error('Error creating checkout session:', err);
+      setError(`Error: ${err.message || 'Something went wrong'}`);
     } finally {
-      setIsLoading(null);
+      setPurchasingTier(null);
     }
   };
 
@@ -170,21 +176,11 @@ export default function PricingModal({ isOpen, onClose, currentCredits, isDarkMo
                   tier.recommended 
                     ? (isDarkMode ? 'border-primary ring-1 ring-primary' : 'border-primary ring-1 ring-primary') 
                     : ''
-                } ${
-                  tier.isTestProduct
-                    ? (isDarkMode ? 'border-blue-500 ring-1 ring-blue-500' : 'border-blue-500 ring-1 ring-blue-500')
-                    : ''
                 }`}
               >
                 {tier.recommended && (
                   <div className="bg-primary text-white text-center py-1 text-sm font-medium">
                     Most Popular
-                  </div>
-                )}
-                
-                {tier.isTestProduct && (
-                  <div className="bg-blue-500 text-white text-center py-1 text-sm font-medium">
-                    Test Product
                   </div>
                 )}
                 
@@ -197,14 +193,10 @@ export default function PricingModal({ isOpen, onClose, currentCredits, isDarkMo
                   </div>
                   
                   <div className={`rounded-lg p-3 mb-4 ${
-                    tier.isTestProduct 
-                      ? 'bg-blue-500/10' 
-                      : 'bg-primary/10'
+                    'bg-primary/10'
                   }`}>
                     <span className={
-                      tier.isTestProduct 
-                        ? 'text-blue-500 font-medium' 
-                        : 'text-primary font-medium'
+                      'text-primary font-medium'
                     }>
                       {tier.credits.toLocaleString()} credits
                     </span>
@@ -229,26 +221,26 @@ export default function PricingModal({ isOpen, onClose, currentCredits, isDarkMo
                   
                   <button
                     onClick={() => handlePurchase(tier.priceId)}
-                    disabled={isLoading === tier.priceId}
-                    className={`w-full py-2 px-4 rounded-lg font-medium transition-all ${
+                    disabled={purchasingTier !== null || (tier.id === 'free' && hasPurchasedStarter)}
+                    className={`w-full mt-4 py-2 px-4 rounded-lg transition-colors ${
                       tier.recommended
                         ? 'bg-primary hover:bg-primary-dark text-white'
-                        : tier.isTestProduct
-                          ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                          : isDarkMode
+                        : isDarkMode
                             ? 'bg-gray-700 hover:bg-gray-600 text-white'
-                            : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
+                            : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                    } ${
+                      purchasingTier !== null || (tier.id === 'free' && hasPurchasedStarter) ? 'opacity-50 cursor-not-allowed' : ''
                     }`}
                   >
-                    {isLoading === tier.priceId ? (
+                    {purchasingTier === tier.id ? (
                       <span className="flex items-center justify-center">
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                         Processing...
                       </span>
-                    ) : tier.isTestProduct ? 'Test Checkout' : tier.price === 0 ? 'Get Started' : 'Purchase'}
+                    ) : tier.id === 'free' && hasPurchasedStarter ? 'Current Plan' : tier.price === 0 ? 'Get Started' : 'Purchase'}
                   </button>
                 </div>
               </div>
