@@ -5,7 +5,7 @@ import dbConnect from '@/lib/dbConnect';
 import User from '@/models/User';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2023-10-16',
+  apiVersion: '2025-02-24.acacia',
 });
 
 // Define price IDs and corresponding credits for the pricing table: prctbl_1QzLmxJrIw0vuTAiYguWSJwi
@@ -17,8 +17,10 @@ const PRICE_CREDITS_MAP: Record<string, number> = {
   'price_pro': 150000,        // Pro tier - 150,000 credits ($9.99)
   'price_1Qzo1PJrIw0vuTAiNebDjhul': 5000,  // Test product - Updated to 5,000 credits ($0.50 CAD)
   
-  // Add any live price IDs that are being used
-  // Example: 'price_1QzLmxJrIw0vuTAiYguWSJwi': 5000, 
+  // Real products with their IDs
+  'price_1QzLeZJrIw0vuTAi0GfokpSI': 5000,  // FREE ($0) - 5,000 credits (prod_Rt7utrRdKwgA1w)
+  'price_1QzLdXJrIw0vuTAiJ2Nw6P5w': 150000, // Pro ($9.99 CAD) - 150,000 credits (prod_Rt7t5WO0YAv9Hz)
+  'price_1QzLd1JrIw0vuTAi7vKQjn9L': 50000,  // Premium ($4.99 CAD) - 50,000 credits (prod_Rt7sV6eIamzKkh)
 };
 
 export async function POST(req: NextRequest) {

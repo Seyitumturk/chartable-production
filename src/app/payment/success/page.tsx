@@ -14,6 +14,7 @@ function SuccessContent() {
   const [isRefreshing, setIsRefreshing] = useState(true);
   const [updatedCredits, setUpdatedCredits] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [creditsAdded, setCreditsAdded] = useState<number | null>(null);
 
   // Get session ID from URL
   const sessionId = searchParams.get('session_id');
@@ -48,8 +49,9 @@ function SuccessContent() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          sessionId, 
-          credits: 5000 // Hardcoded for now as this is for the test product
+          sessionId,
+          // Don't hardcode credits - let the server determine the correct amount
+          // based on the product purchased in the session
         }),
       });
 
@@ -57,6 +59,11 @@ function SuccessContent() {
         const result = await response.json();
         console.log('[PAYMENT_SUCCESS] Direct credit update result:', result);
         setUpdatedCredits(true);
+        
+        // Update the local displayed credit amount if it's returned from the server
+        if (result.creditsAdded) {
+          setCreditsAdded(result.creditsAdded);
+        }
       } else {
         const errorText = await response.text();
         console.error('[PAYMENT_SUCCESS] Direct credit update failed:', errorText);
@@ -163,7 +170,7 @@ function SuccessContent() {
             
             <p className={`mb-6 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
               {updatedCredits 
-                ? "5000 credits have been added to your account." 
+                ? `${creditsAdded?.toLocaleString() || "Your"} credits have been added to your account.` 
                 : "Your credits are being added to your account."}
             </p>
             

@@ -6,14 +6,15 @@ import connectDB from '@/lib/mongodb'; // Use direct mongodb connection
 import User from '@/models/User';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2023-10-16',
+  apiVersion: '2025-02-24.acacia',
 });
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
-  const sig = headers().get('stripe-signature') || '';
+  const headersData = await headers();
+  const sig = headersData.get('stripe-signature') || '';
 
   let event;
 
@@ -84,19 +85,58 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
 
   console.log(`[WEBHOOK] Session metadata: userId=${userId}, clerkId=${clerkId}, credits=${credits}`);
 
-  // IMPORTANT FIX: Default to 5000 credits for test product if metadata is missing
-  let purchasedCredits = 5000; // Default to 5000 credits for test product
+  // Credit values for each price ID (should match values in create-checkout-session route)
+  const PRICE_CREDITS_MAP: Record<string, number> = {
+    'price_1QzLeZJrIw0vuTAi0GfokpSI': 5000,  // FREE ($0)
+    'price_1QzLdXJrIw0vuTAiJ2Nw6P5w': 150000, // Pro ($9.99 CAD)
+    'price_1QzLd1JrIw0vuTAi7vKQjn9L': 50000,  // Premium ($4.99 CAD)
+    'price_1Qzo1PJrIw0vuTAiNebDjhul': 5000,  // Test product
+  };
+
+  // Default to 5000 credits if no specific value is known
+  let purchasedCredits = 5000; 
   
+  // Try to get credits from different sources
   if (credits) {
     // If credits are specified in metadata, use those
     const parsedCredits = parseInt(credits);
     if (!isNaN(parsedCredits)) {
       purchasedCredits = parsedCredits;
+      console.log(`[WEBHOOK] Using credits from metadata: ${purchasedCredits}`);
     } else {
       console.error(`[WEBHOOK] Invalid credits value in metadata: ${credits}, using default 5000`);
     }
+  } else if (session.metadata?.productName && PRICE_CREDITS_MAP[session.metadata.productName]) {
+    // If product name is in metadata and matches a price ID in our map
+    purchasedCredits = PRICE_CREDITS_MAP[session.metadata.productName];
+    console.log(`[WEBHOOK] Using credits from product name in metadata: ${purchasedCredits}`);
+  } else if (session.line_items?.data?.[0]?.price?.id && PRICE_CREDITS_MAP[session.line_items.data[0].price.id]) {
+    // If we can get the price ID from line items (not typically available in webhooks without expansion)
+    purchasedCredits = PRICE_CREDITS_MAP[session.line_items.data[0].price.id];
+    console.log(`[WEBHOOK] Using credits from line item price ID: ${purchasedCredits}`);
   } else {
-    console.log(`[WEBHOOK] No credits specified in metadata, using default: ${purchasedCredits}`);
+    // Try to retrieve the price ID from the session to determine the credit amount
+    try {
+      if (session.id) {
+        console.log(`[WEBHOOK] Attempting to retrieve session details for ID: ${session.id}`);
+        // Get the full session with line_items expanded
+        const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
+          expand: ['line_items'],
+        });
+        
+        if (fullSession.line_items?.data?.[0]?.price?.id) {
+          const priceId = fullSession.line_items.data[0].price.id;
+          if (PRICE_CREDITS_MAP[priceId]) {
+            purchasedCredits = PRICE_CREDITS_MAP[priceId];
+            console.log(`[WEBHOOK] Retrieved credits from expanded session: ${purchasedCredits} for price ${priceId}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[WEBHOOK] Error fetching expanded session details:', error);
+    }
+    
+    console.log(`[WEBHOOK] Using final credit value: ${purchasedCredits}`);
   }
 
   console.log(`[WEBHOOK] Credits to add: ${purchasedCredits}`);

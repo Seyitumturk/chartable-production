@@ -12,16 +12,16 @@ const pricingTiers = [
     name: 'Starter',
     credits: 5000,
     price: 0,
-    priceId: 'price_starter',
+    priceId: 'price_1QzLeZJrIw0vuTAi0GfokpSI',
     features: ['Basic diagrams', 'Export as PNG', 'Save up to 3 projects'],
     recommended: false
   },
   {
     id: 'plus',
-    name: 'Plus',
+    name: 'Premium',
     credits: 50000,
     price: 4.99,
-    priceId: 'price_plus',
+    priceId: 'price_1QzLd1JrIw0vuTAi7vKQjn9L',
     features: ['Advanced diagrams', 'Export in multiple formats', 'Unlimited projects', 'Priority support'],
     recommended: true
   },
@@ -30,7 +30,7 @@ const pricingTiers = [
     name: 'Pro',
     credits: 150000,
     price: 9.99,
-    priceId: 'price_pro',
+    priceId: 'price_1QzLdXJrIw0vuTAiJ2Nw6P5w',
     features: ['All Plus features', 'Team collaboration', 'Custom themes', 'API access'],
     recommended: false
   },
@@ -126,11 +126,9 @@ export default function PricingModal({ isOpen, onClose, currentCredits, isDarkMo
           }`}>
             <div className="font-bold mb-1">⚠️ Stripe Setup Required</div>
             <p>You need to create products and prices in your Stripe dashboard and update the price IDs in:</p>
-            <ul className="list-disc pl-5 mt-1 space-y-1">
-              <li><code>src/app/api/stripe/create-checkout-session/route.ts</code></li>
-              <li><code>src/components/PricingModal.tsx</code></li>
-            </ul>
-            <p className="mt-2">Replace <code>price_starter</code>, <code>price_plus</code>, and <code>price_pro</code> with your actual price IDs from Stripe.</p>
+            <code className="block bg-gray-800 p-2 rounded text-sm overflow-x-auto my-2">
+              src/components/PricingModal.tsx
+            </code>
           </div>
         )}
 
