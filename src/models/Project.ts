@@ -19,6 +19,7 @@ export interface IProject extends Document {
   createdAt: Date;
   updatedAt: Date;
   currentDiagram: string;
+  canvasState?: string;
 }
 
 export enum DiagramType {
@@ -27,11 +28,20 @@ export enum DiagramType {
   CLASS = 'class',
   STATE = 'state',
   ER = 'er',
+  ERD = 'erd',
   GANTT = 'gantt',
   PIE = 'pie',
   MINDMAP = 'mindmap',
   TIMELINE = 'timeline',
   ARCHITECTURE = 'architecture',
+  ARCHITECTURE_BETA = 'architecture-beta',
+  USER_JOURNEY = 'user_journey',
+  QUADRANT = 'quadrant',
+  REQUIREMENT = 'requirement',
+  C4_DIAGRAM = 'c4_diagram',
+  SANKEY = 'sankey',
+  GIT = 'git',
+  INTERACTIVE = 'interactive',
 }
 
 const projectSchema = new Schema<IProject>({
@@ -73,7 +83,8 @@ const projectSchema = new Schema<IProject>({
       'sankey',
       'git',
       'architecture',
-      'architecture-beta'
+      'architecture-beta',
+      'interactive'
     ],
   },
   history: [{
@@ -100,6 +111,10 @@ const projectSchema = new Schema<IProject>({
     },
   }],
   currentDiagram: {
+    type: String,
+    required: false,
+  },
+  canvasState: {
     type: String,
     required: false,
   },

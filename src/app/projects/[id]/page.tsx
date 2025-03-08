@@ -102,16 +102,21 @@ async function getProject(userId: string, projectId: string) {
   };
 }
 
-export default async function ProjectPage({ params }: { params: { id: string } }) {
+export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { userId } = await auth();
   if (!userId) {
     redirect('/login');
   }
 
-  // Properly await the params
+  // Properly await the params object
   const { id } = await params;
   const { project, user } = await getProject(userId, id);
   
+  // Redirect to interactive editor for interactive diagram type
+  if (project.diagramType === 'interactive') {
+    redirect(`/projects/${id}/interactiveEditor`);
+  }
+
   // Use currentDiagram if available; otherwise fall back to history[0]
   const currentDiagram = project.currentDiagram || (project.history[0]?.diagram || '');
   

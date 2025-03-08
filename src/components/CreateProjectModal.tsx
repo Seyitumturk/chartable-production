@@ -41,6 +41,7 @@ export default function CreateProjectModal({ isOpen, onClose, isDarkMode }: Crea
     { value: 'gantt', label: 'Gantt Chart', icon: '/diagrams/gantt.svg' },
     { value: 'architecture', label: 'Architecture Diagram', icon: '/diagrams/flowchart.svg' },
     { value: 'git', label: 'Git Graph', icon: '/diagrams/git.svg' },
+    { value: 'interactive', label: 'Interactive Editor (Claude 3.7)', icon: '/diagrams/interactive.svg' },
   ];
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {

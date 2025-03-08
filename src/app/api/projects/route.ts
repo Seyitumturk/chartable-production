@@ -57,19 +57,45 @@ export async function POST(req: Request) {
 
     const { title, diagramType } = await req.json();
 
-    // Look for any validation logic related to diagramType
-    // If there's any validation or schema definition here, add 'architecture-beta' to it
+    // Define the valid diagram types (must match the enum in the Project model)
+    const validDiagramTypes = [
+      'erd',
+      'flowchart',
+      'sequence',
+      'class',
+      'state',
+      'user_journey',
+      'gantt',
+      'quadrant',
+      'requirement',
+      'c4_diagram',
+      'mindmap',
+      'timeline',
+      'sankey',
+      'git',
+      'architecture',
+      'architecture-beta',
+      'interactive'
+    ];
+
+    // Check if the diagram type is valid
+    const normalizedDiagramType = diagramType.toLowerCase();
+    if (!validDiagramTypes.includes(normalizedDiagramType)) {
+      return NextResponse.json(
+        { error: `Invalid diagram type: ${diagramType}. Valid types are: ${validDiagramTypes.join(', ')}` },
+        { status: 400 }
+      );
+    }
 
     const project = new Project({
       title,
-      diagramType: diagramType.toLowerCase(),
+      diagramType: normalizedDiagramType,
       userId: user._id,
     });
 
     await project.save();
 
     return NextResponse.json(project);
-
   } catch (error) {
     console.error('Error in projects API:', error);
     return NextResponse.json(
